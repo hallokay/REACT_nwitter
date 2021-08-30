@@ -14,10 +14,10 @@ const AppRouter = ({ isLoggedIn, userObj }) => {
         {isLoggedIn ? (
           <>
             <Route exact path="/">
-              <Home userObj={userObj}/>
+              <Home userObj={userObj} />
             </Route>
             <Route exact path="/profile">
-              <Profile />
+              <Profile userObj={userObj} />
             </Route>
             <Redirect form="*" to="/" />
             {/* /이route에 없으면 /로 돌아가라는 뜻 */}

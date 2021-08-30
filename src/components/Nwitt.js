@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { dbService } from "../fbase";
+import { dbService, storageService } from "../fbase";
 
 const Nwitt = ({ nwittObj, isOwner }) => {
   const [editing, setEditing] = useState(false);
@@ -10,11 +10,12 @@ const Nwitt = ({ nwittObj, isOwner }) => {
 
     if (delOk) {
       await dbService.doc(`nwitts/${nwittObj.id}`).delete();
+      await storageService.refFromURL(nwittObj.attachmentUrl).delete();
     }
   };
 
   const toggleEditing = () => setEditing((prev) => !prev);
-//   에디팅상태인지 아닌지 가지고 잇는 상태를 부정한다.
+  //   에디팅상태인지 아닌지 가지고 잇는 상태를 부정한다.
 
   const onChange = (e) => {
     const {
@@ -26,11 +27,11 @@ const Nwitt = ({ nwittObj, isOwner }) => {
   const onSubmit = (e) => {
     e.preventDefault();
     dbService.doc(`nwitts/${nwittObj.id}`).update({
-        text: newNwitt,
+      text: newNwitt,
     });
     setEditing(false);
   };
-    
+
   return (
     <div>
       {editing ? (
@@ -50,6 +51,7 @@ const Nwitt = ({ nwittObj, isOwner }) => {
       ) : (
         <>
           <h4>{nwittObj.text}</h4>
+          {nwittObj.attachmentUrl && <img src={nwittObj.attachmentUrl} />}
           {isOwner && (
             <>
               <button onClick={onDelClick}>delete Nwitt</button>

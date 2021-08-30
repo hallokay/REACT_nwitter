@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import Nwitt from "../components/Nwitt";
-import { dbService } from "../fbase";
+import { dbService, storageService } from "../fbase";
 
 const Home = ({ userObj }) => {
   const [nwitt, setNwitt] = useState("");
   const [nwittArr, setNwittArr] = useState([]);
-  const [attachment, setAttachment] = useState();
+  const [attachment, setAttachment] = useState("");
 
   // const getNwitts = async () => {
   //   // 디비 nwitts 컬렉션에 있는 것을 가져옴
@@ -39,12 +40,29 @@ const Home = ({ userObj }) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    await dbService.collection("nwitts").add({
+
+    let attachmentUrl = "";
+    // const는 블록 안에서만 먹히기 떄문에 빼줘서 사용
+
+    if (attachment !== "") {
+      const attachmentRef = storageService
+        .ref()
+        .child(`${userObj.uid}/${uuidv4()}`);
+      // 이것은 collection이랑 아주 비슷해
+      const response = await attachmentRef.putString(attachment, "data_url");
+      attachmentUrl = await response.ref.getDownloadURL();
+    }
+
+    const nwittObj = {
       text: nwitt,
       createdAt: Date.now(),
       createrId: userObj.uid,
-    });
+      attachmentUrl,
+    };
+
+    await dbService.collection("nwitts").add(nwittObj);
     setNwitt("");
+    setAttachment("");
   };
 
   const onChange = (e) => {
@@ -54,25 +72,27 @@ const Home = ({ userObj }) => {
     setNwitt(value);
   };
 
-
   // 파일 업로드
- const onFileChange = (e) => {
-    const {target: {files}} = e;
+  const onFileChange = (e) => {
+    const {
+      target: { files },
+    } = e;
     const theFile = files[0];
 
-  // fileReader API
-  const fileReader = new FileReader();
-  fileReader.readAsDataURL(theFile);
-  // 여기서 파일을 읽기 시작하고 이게 끝나면 아래 loadend이벤트 시작
-  fileReader.onloadend = (e) => {
-    console.log(e);
-    const { currentTarget:{result}} = e;
-    setAttachment(result);
-  }
+    // fileReader API
+    const fileReader = new FileReader();
+    fileReader.readAsDataURL(theFile);
+    // 여기서 파일을 읽기 시작하고 이게 끝나면 아래 loadend이벤트 시작
+    fileReader.onloadend = (e) => {
+      console.log(e);
+      const {
+        currentTarget: { result },
+      } = e;
+      setAttachment(result);
+    };
+  };
 
-  }
-
-  const onClearImgClick = () => setAttachment(null)
+  const onClearImgClick = () => setAttachment(null);
 
   return (
     <div>
@@ -93,7 +113,7 @@ const Home = ({ userObj }) => {
         {attachment && (
           <div>
             <img src={attachment} alt="userImg" />
-          <button onClick={onClearImgClick}>Clear</button>
+            <button onClick={onClearImgClick}>Clear</button>
           </div>
         )}
       </form>
